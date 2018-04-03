@@ -83,6 +83,8 @@ func TestSingleOrder(t *testing.T) {
 }
 
 func TestRing(t *testing.T) {
+	const orderPairNumber = 1
+
 	c := test.Cfg()
 	entity := test.Entity()
 
@@ -99,7 +101,7 @@ func TestRing(t *testing.T) {
 
 	// set order and marshal to json
 	protocol := common.HexToAddress(c.Common.ProtocolImpl.Address[test.Version])
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < orderPairNumber; i++ {
 		walletId := big.NewInt(int64(i))
 
 		// 卖出0.1个eth， 买入300个lrc,lrcFee为20个lrc
@@ -120,7 +122,7 @@ func TestRing(t *testing.T) {
 		bs1, _ := order1.MarshalJSON()
 
 		// 卖出1000个lrc,买入0.1个eth,lrcFee为20个lrc
-		amountS2, _ := new(big.Int).SetString("1000"+suffix, 0)
+		amountS2, _ := new(big.Int).SetString("2000"+suffix, 0)
 		amountB2, _ := new(big.Int).SetString("1"+suffix, 0)
 		lrcFee2 := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(5))
 		order2 := test.CreateOrder(

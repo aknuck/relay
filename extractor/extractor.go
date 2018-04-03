@@ -240,7 +240,7 @@ func (l *ExtractorServiceImpl) ProcessMethod(tx *ethaccessor.Transaction, receip
 		gasUsed = receipt.GasUsed.BigInt()
 	}
 
-	data := hexutil.MustDecode("0x" + method.Input[10:])
+	data := hexutil.MustDecode("0x" + tx.Input[10:])
 	if err := method.CAbi.UnpackMethodInput(&method.Method, method.Name, data); err != nil {
 		log.Errorf("extractor,tx:%s cutoff method unpack error:%s", method.TxHash.Hex(), err.Error())
 		return nil

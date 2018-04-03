@@ -159,8 +159,8 @@ func (n *Node) Start() {
 	n.extractorService.Start()
 
 	// todo delete after test
-	//txManager := txmanager.NewTxManager(n.rdsService, &n.accountManager)
-	//txManager.Start()
+	txManager := txmanager.NewTxManager(n.rdsService, &n.accountManager)
+	txManager.Start()
 
 	ethaccessor.IncludeGasPriceEvaluator()
 
