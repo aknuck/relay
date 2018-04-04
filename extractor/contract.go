@@ -26,7 +26,7 @@ import (
 	"github.com/Loopring/relay/market"
 	"github.com/Loopring/relay/market/util"
 	"github.com/Loopring/relay/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/Loopring/relay/ethaccessor/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
@@ -412,6 +412,7 @@ func (processor *AbiProcessor) loadTokenTransferDelegateProtocol() {
 	}
 }
 
+/*
 func (processor *AbiProcessor) handleApproveMethod(input eventemitter.EventData) error {
 	contractData := input.(MethodData)
 	contractMethod := contractData.Method.(*ethaccessor.ApproveMethod)
@@ -853,6 +854,7 @@ func (processor *AbiProcessor) handleWethWithdrawalEvent(input eventemitter.Even
 
 	return nil
 }
+*/
 
 func (processor *AbiProcessor) handleEthTransfer(tx *ethaccessor.Transaction, gasUsed, time *big.Int, status uint8) error {
 	var dst types.TransferEvent

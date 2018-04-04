@@ -21,7 +21,7 @@ package ethaccessor
 import (
 	"github.com/Loopring/relay/log"
 	"github.com/Loopring/relay/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/Loopring/relay/ethaccessor/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"

@@ -26,7 +26,7 @@ import (
 	"github.com/Loopring/relay/log"
 	"github.com/Loopring/relay/market"
 	"github.com/Loopring/relay/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/Loopring/relay/ethaccessor/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
@@ -248,8 +248,16 @@ func (l *ExtractorServiceImpl) ProcessMethod(tx *ethaccessor.Transaction, receip
 		gasUsed = receipt.GasUsed.BigInt()
 	}
 
-	data := hexutil.MustDecode("0x" + tx.Input[10:])
-	if err := method.CAbi.UnpackMethodInput(&method.Method, method.Name, data); err != nil {
+	var (
+		decodedValues [][]byte
+		data []byte
+	)
+	if method.Name == WETH_DEPOSIT_METHOD_NAME {
+		decodedValues = append(decodedValues, hexutil.MustDecode(tx.Input))
+	} else {
+		data = hexutil.MustDecode("0x" + tx.Input[10:])
+	}
+	if err := method.CAbi.Unpack(&method.Method, method.Name, data, decodedValues); err != nil {
 		log.Errorf("extractor,tx:%s cutoff method unpack error:%s", method.TxHash.Hex(), err.Error())
 		return nil
 	}
@@ -282,16 +290,22 @@ func (l *ExtractorServiceImpl) ProcessEvent(tx *ethaccessor.Transaction, receipt
 		}
 
 		// 过滤事件
-		data := hexutil.MustDecode(evtLog.Data)
 		id := common.HexToHash(evtLog.Topics[0])
 		if event, ok = l.processor.GetEvent(id); !ok {
 			l.debug("extractor,tx:%s contract event id error:%s", txhash, id.Hex())
 			continue
 		}
 
+		var decodedValues [][]byte
+		data := hexutil.MustDecode(evtLog.Data)
+		for k, v := range evtLog.Topics {
+			if k != 0 {
+				decodedValues = append(decodedValues, hexutil.MustDecode(v))
+			}
+		}
 		if nil != data && len(data) > 0 {
 			// 解析事件
-			if err := event.CAbi.Unpack(event.Event, event.Name, data, abi.SEL_UNPACK_EVENT); nil != err {
+			if err := event.CAbi.Unpack(event.Event, event.Name, data, decodedValues); nil != err {
 				log.Errorf("extractor,tx:%s unpack event error:%s", txhash, err.Error())
 				continue
 			}
