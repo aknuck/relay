@@ -16,11 +16,12 @@ import (
 type BusinessType int
 
 const (
-	EventPostfixReq        = "_req"
-	EventPostfixRes        = "_res"
-	EventPostfixEnd        = "_end"
-	DefaultCronSpec3Second = "0/3 * * * * *"
-	DefaultCronSpec5Minute = "0 */5 * * * *"
+	EventPostfixReq         = "_req"
+	EventPostfixRes         = "_res"
+	EventPostfixEnd         = "_end"
+	DefaultCronSpec3Second  = "0/3 * * * * *"
+	DefaultCronSpec10Second = "0/10 * * * * *"
+	DefaultCronSpec5Minute  = "0 */5 * * * *"
 )
 
 var EventPostfixs = []string{EventPostfixReq, EventPostfixRes, EventPostfixEnd}
@@ -70,7 +71,7 @@ var EventTypeRoute = map[string]InvokeInfo{
 	"marketcap":       {"GetPriceQuote", PriceQuoteQuery{}, true, DefaultCronSpec5Minute},
 	"balance":         {"GetBalance", CommonTokenRequest{}, false, DefaultCronSpec3Second},
 	"transaction":     {"GetTransactions", TransactionQuery{}, false, DefaultCronSpec3Second},
-	"trxByHashes":     {"GetTransactionsByHash", TransactionQuery{}, false, DefaultCronSpec3Second},
+	"pendingTx":       {"GetPendingTransactions", SingleOwner{}, false, DefaultCronSpec10Second},
 	"depth":           {"GetDepth", DepthQuery{}, true, DefaultCronSpec3Second},
 }
 
@@ -212,12 +213,6 @@ func (so *SocketIOServiceImpl) handleWith(eventType string, query interface{}, m
 		if err != nil {
 			log.Println("unmarshal error " + err.Error())
 			errJson, _ := json.Marshal(SocketIOJsonResp{Error: err.Error()})
-			//if conn != nil && conn.Context() != nil {
-			//	context := conn.Context().(map[string]string)
-			//	delete(context, eventType)
-			//	conn.SetContext(context)
-			//	so.connIdMap[conn.ID()] = conn
-			//}
 			return string(errJson[:])
 
 		}

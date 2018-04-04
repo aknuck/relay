@@ -207,10 +207,12 @@ type TransactionJsonResult struct {
 	Status      string             `json:"status"`
 	CreateTime  int64              `json:"createTime"`
 	UpdateTime  int64              `json:"updateTime"`
+	Nonce       string             `json:"nonce"`
 }
 
 type TransactionContent struct {
-	Market string `json:"market"`
+	Market    string `json:"market"`
+	OrderHash string `json:"orderHash"`
 }
 
 type PriceQuote struct {
@@ -715,6 +717,35 @@ func (w *WalletServiceImpl) GetTransactionsByHash(query TransactionQuery) (resul
 	return result, nil
 }
 
+func (w *WalletServiceImpl) GetPendingTransactions(query SingleOwner) (result []TransactionJsonResult, err error) {
+
+	if len(query.Owner) == 0 {
+		return nil, errors.New("owner can't be null")
+	}
+
+	txQuery := make(map[string]interface{})
+	txQuery["owner"] = query.Owner
+	txQuery["status"] = types.TX_STATUS_PENDING
+
+	rst, err := w.rds.PendingTransactions(txQuery)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result = make([]TransactionJsonResult, 0)
+	for _, r := range rst {
+		tr := types.Transaction{}
+		err = r.ConvertUp(&tr)
+		if err != nil {
+			log.Error("convert error occurs..." + err.Error())
+		}
+		result = append(result, toTxJsonResult(tr))
+	}
+
+	return result, nil
+}
+
 func convertFromQuery(orderQuery *OrderQuery) (query map[string]interface{}, statusList []types.OrderStatus, pageIndex int, pageSize int) {
 
 	query = make(map[string]interface{})
@@ -1046,13 +1077,22 @@ func toTxJsonResult(tx types.Transaction) TransactionJsonResult {
 	dst.From = tx.From
 	dst.To = tx.To
 	dst.TxHash = tx.TxHash
-	ctx, err := tx.GetCutoffPairContent()
-	if err == nil && ctx != nil {
-		mkt, err := util.WrapMarketByAddress(ctx.Token1.Hex(), ctx.Token2.Hex())
-		if err == nil {
-			dst.Content = TransactionContent{Market: mkt}
+
+	if tx.Type == types.TX_TYPE_CUTOFF_PAIR {
+		ctx, err := tx.GetCutoffPairContent()
+		if err == nil && ctx != nil {
+			mkt, err := util.WrapMarketByAddress(ctx.Token1.Hex(), ctx.Token2.Hex())
+			if err == nil {
+				dst.Content = TransactionContent{Market: mkt}
+			}
+		}
+	} else if tx.Type == types.TX_TYPE_CANCEL_ORDER {
+		ctx, err := tx.GetCancelOrderHash()
+		if err == nil && ctx != "" {
+			dst.Content = TransactionContent{OrderHash: ctx}
 		}
 	}
+
 	dst.BlockNumber = tx.BlockNumber.Int64()
 	dst.LogIndex = tx.LogIndex
 	if tx.Value == nil {
@@ -1065,6 +1105,7 @@ func toTxJsonResult(tx types.Transaction) TransactionJsonResult {
 	dst.CreateTime = tx.CreateTime
 	dst.UpdateTime = tx.UpdateTime
 	dst.Symbol = tx.Symbol
+	dst.Nonce = tx.TxInfo.Nonce.String()
 	return dst
 }
 

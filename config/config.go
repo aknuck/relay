@@ -131,6 +131,7 @@ type ExtractorOptions struct {
 	EndBlockNumber     *big.Int
 	ConfirmBlockNumber uint64
 	Debug              bool
+	Open               bool
 }
 
 type KeyStoreOptions struct {
@@ -181,6 +182,8 @@ type NormalMinerAddress struct {
 type MinerOptions struct {
 	RingMaxLength         int `` //recommended value:4
 	Name                  string
+	Subsidy               float64
+	WalletSplit           float64
 	NormalMiners          []NormalMinerAddress  //
 	PercentMiners         []PercentMinerAddress //
 	TimingMatcher         *TimingMatcher

@@ -60,11 +60,11 @@ func (market *Market) match() {
 					log.Errorf("err:%s", err.Error())
 					continue
 				} else {
-					//if ringForSubmit.Received.Sign() > 0 {
-					candidateRingList = append(candidateRingList, *candidateRing)
-					//} else {
-					//	log.Debugf("timing_matchher, market ringForSubmit received not enough, received:%s, gas:%s, gasPrice:%s ", ringForSubmit.Received.FloatString(0), ringForSubmit.ProtocolGas.String(), ringForSubmit.ProtocolGasPrice.String())
-					//}
+					if candidateRing.received.Sign() > 0 {
+						candidateRingList = append(candidateRingList, *candidateRing)
+					} else {
+						log.Debugf("timing_matchher, market ringForSubmit received not enough, received:%s, cost:%s ", candidateRing.received.FloatString(0), candidateRing.cost.FloatString(0))
+					}
 				}
 			}
 		}
@@ -94,19 +94,19 @@ func (market *Market) match() {
 			continue
 		} else {
 			//todo:for test, release this limit
-			//if ringForSubmit.Received.Sign() > 0 {
-			for _, filledOrder := range ringForSubmit.RawRing.Orders {
-				orderState := market.reduceAmountAfterFilled(filledOrder)
-				isFullFilled := market.om.IsOrderFullFinished(orderState)
-				matchedOrderHashes[filledOrder.OrderState.RawOrder.Hash] = isFullFilled
-				market.matcher.rounds.appendFilledOrderToCurrent(filledOrder, ringForSubmit.RawRing.Hash)
+			if ringForSubmit.Received.Sign() > 0 {
+				for _, filledOrder := range ringForSubmit.RawRing.Orders {
+					orderState := market.reduceAmountAfterFilled(filledOrder)
+					isFullFilled := market.om.IsOrderFullFinished(orderState)
+					matchedOrderHashes[filledOrder.OrderState.RawOrder.Hash] = isFullFilled
+					market.matcher.rounds.AppendFilledOrderToCurrent(filledOrder, ringForSubmit.RawRing.Hash)
 
-				list = market.reduceReceivedOfCandidateRing(list, filledOrder, isFullFilled)
+					list = market.reduceReceivedOfCandidateRing(list, filledOrder, isFullFilled)
+				}
+				ringSubmitInfos = append(ringSubmitInfos, ringForSubmit)
+			} else {
+				log.Debugf("ring:%s will not be submitted,because of received:%s", ringForSubmit.RawRing.Hash.Hex(), ringForSubmit.Received.String())
 			}
-			ringSubmitInfos = append(ringSubmitInfos, ringForSubmit)
-			//} else {
-			//	log.Debugf("ring:%s will not be submitted,because of received:%s", ringForSubmit.RawRing.Hash.Hex(), ringForSubmit.Received.String())
-			//}
 		}
 	}
 
@@ -218,7 +218,7 @@ func (market *Market) getOrdersForMatching(protocolAddress common.Address) {
 func (market *Market) reduceRemainedAmountBeforeMatch(orderState *types.OrderState) {
 	orderHash := orderState.RawOrder.Hash
 
-	amountS, amountB := market.matcher.rounds.dealtAmount(orderHash)
+	amountS, amountB := market.matcher.rounds.DealtAmount(orderHash)
 
 	log.Debugf("reduceRemainedAmountBeforeMatch:%s, %s, %s", orderState.RawOrder.Owner.Hex(), amountS.String(), amountB.String())
 	orderState.DealtAmountB.Add(orderState.DealtAmountB, ratToInt(amountB))
